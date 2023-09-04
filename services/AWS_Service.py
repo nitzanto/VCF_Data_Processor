@@ -1,5 +1,4 @@
 import httpx
-import zlib
 from constants import AWS
 import gzip
 from io import BytesIO
@@ -14,10 +13,7 @@ class AWS_Service:
 
         async with httpx.AsyncClient(verify=False) as client:
             try:
-                response = await client.get(
-                    httpsUrl,
-                    timeout=None
-                )
+                response = await client.get(httpsUrl)
                 response.raise_for_status()
 
                 # Create a generator to stream the content in chunks
@@ -25,7 +21,7 @@ class AWS_Service:
                     buffer = BytesIO(response.content)
                     with gzip.GzipFile(fileobj=buffer, mode='rb') as decompressor:
                         while True:
-                            chunk = decompressor.read(8192)  # Adjust chunk size as needed
+                            chunk = decompressor.read(8192)  # Each chunk is set to 8 KBs
                             if not chunk:
                                 break
                             yield chunk.decode('utf-8')
