@@ -1,29 +1,36 @@
 import httpx
 import zlib
+from constants import AWS
+import gzip
+from io import BytesIO
 
 
 class AWS_Service:
-    async def getS3File(self, s3Url):
+    async def getS3FileAsStream(self, s3Url):
         httpsUrl = s3Url.replace(
-            "s3://resources.genoox.com",
-            "https://resources.genoox.com.s3.amazonaws.com"
+            s3Url,
+            AWS.Constants.S3_Object_Url
         )
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=False) as client:
             try:
                 response = await client.get(
                     httpsUrl,
-                    headers={"Accept-Encoding": "gzip"},
-                    timeout=None  # Adjust the timeout as needed
+                    timeout=None
                 )
                 response.raise_for_status()
 
-                # Check if content-encoding is gzip and decode accordingly
-                if response.headers.get("content-encoding") == "gzip":
-                    async for chunk in response.iter_bytes():
-                        yield zlib.decompress(chunk).decode('utf-8')
-                else:
-                    async for chunk in response.iter_bytes():
-                        yield chunk
+                # Create a generator to stream the content in chunks
+                async def stream_content():
+                    buffer = BytesIO(response.content)
+                    with gzip.GzipFile(fileobj=buffer, mode='rb') as decompressor:
+                        while True:
+                            chunk = decompressor.read(8192)  # Adjust chunk size as needed
+                            if not chunk:
+                                break
+                            yield chunk.decode('utf-8')
+
+                return stream_content()
+
             except httpx.HTTPError as error:
                 raise Exception(f"Error fetching S3 file: {error}")

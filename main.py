@@ -1,17 +1,22 @@
 from constants import AWS
-from services import AWS_Service
+from services.AWS_Service import AWS_Service
+import asyncio
+
 
 async def main():
-    s3_url = AWS.Constants.S3_URL
-    S3_Stream = AWS_Service()
+    S3_Url = AWS.Constants.S3_Url
+    aws_service = AWS_Service()
 
     try:
-        data = await AWS_Service.getS3File(s3_url)
-        print("Retrieved data:")
-        print(data.decode('utf-8'))  # Assuming the data is text
+        stream = await aws_service.getS3FileAsStream(S3_Url)
+
+        async for line in stream:
+            print("Read line:")
+            print(line)
+
     except Exception as e:
         print(f"Error: {e}")
 
+
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())
