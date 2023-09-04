@@ -21,7 +21,7 @@ class AWS_Service:
                 # Check if content-encoding is gzip and decode accordingly
                 if response.headers.get("content-encoding") == "gzip":
                     async for chunk in response.iter_bytes():
-                        yield zlib.decompress(chunk)
+                        yield zlib.decompress(chunk).decode('utf-8')
                 else:
                     async for chunk in response.iter_bytes():
                         yield chunk
