@@ -13,8 +13,8 @@ parser = pd
 
 async def getS3FileStream(S3_Url):
     try:
-        fileStream = await aws_service.getS3FileAsStream(S3_Url)
-        return fileStream
+        async for chunk in aws_service.getS3FileAsStream(S3_Url):
+            yield chunk
     except Exception as e:
         print("Error fetching S3 File:", e)
         sys.exit(1)
@@ -33,8 +33,8 @@ async def main():
     S3_Url = AWS.Constants.S3_Url
 
     try:
-        stream = await aws_service.getS3FileAsStream(S3_Url)
-        return await processVcfFile(stream, 2059966, 5059966, 5, 5, True)
+        async for chunk in getS3FileStream(S3_Url):
+            await processVcfFile(chunk, 2059966, 5059966, 5, 5, True)  # Pass each chunk to processVcfFile
     except Exception as e:
         print(f"Error: {e}")
 
